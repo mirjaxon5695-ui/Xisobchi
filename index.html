@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f12">
+<title>Hisobchi</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--text:#14151a;--mute:#6b7280;--line:#e5e7eb;--in:#16a34a;--out:#dc2626;--acc:#111827;--accT:#fff;--soft:#f3f4f6}
+@media(prefers-color-scheme:dark){:root{--bg:#0e0f12;--card:#17181d;--text:#f2f3f5;--mute:#8b909a;--line:#262830;--in:#34d399;--out:#f87171;--acc:#f2f3f5;--accT:#0e0f12;--soft:#1f2128}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100%}
+.wrap{max-width:620px;margin:0 auto;padding:16px;padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+h1{font-size:20px;font-weight:700;margin-bottom:14px;letter-spacing:.3px}
+h2{font-size:13px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:8px 15px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--mute);cursor:pointer}
+.tab.on{background:var(--acc);color:var(--accT);border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+label{display:block;font-size:12px;font-weight:600;color:var(--mute);margin-bottom:5px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:var(--soft);color:var(--text);-webkit-appearance:none;appearance:none;font-family:inherit}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.row{display:flex;gap:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg button{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--mute);font-size:15px;font-weight:600;cursor:pointer}
+.seg button.on.in{background:var(--in);color:#fff;border-color:var(--in)}
+.seg button.on.out{background:var(--out);color:#fff;border-color:var(--out)}
+.btn{padding:14px;border:none;border-radius:10px;background:var(--acc);color:var(--accT);font-size:16px;font-weight:700;cursor:pointer;width:100%}
+.btn:active{opacity:.8}
+.ico{flex-shrink:0;width:48px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);font-size:20px;cursor:pointer}
+.cur{margin-bottom:12px}
+.cur-h{font-weight:700;font-size:14px;margin-bottom:10px}
+.cur-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cur-g div{background:var(--soft);border-radius:10px;padding:10px 8px;text-align:center}
+.cur-g small{display:block;font-size:11px;color:var(--mute);margin-bottom:3px}
+.cur-g b{font-size:14px;word-break:break-word}
+.pos{color:var(--in)}.neg{color:var(--out)}
+.person{padding:12px 0;border-top:1px solid var(--line)}
+.person:first-of-type{border-top:none;padding-top:0}
+.person-n{font-weight:700;margin-bottom:6px}
+.person-l{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
+.person-l span:first-child{color:var(--mute)}
+.tr{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
+.tr.in{border-left-color:var(--in)}.tr.out{border-left-color:var(--out)}
+.tr-h{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:4px}
+.tr-h b{color:var(--text);font-size:15px}
+.tr-a{font-size:18px;font-weight:700}
+.tr-d{font-size:13px;color:var(--mute);margin-top:2px;word-break:break-word}
+.tr-f{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.sm{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer}
+.sm.d{color:var(--out);border-color:var(--out)}
+.empty{text-align:center;color:var(--mute);padding:28px;font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:10}
+.bar button{flex:1;padding:12px 4px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--text);font-size:13px;font-weight:600;cursor:pointer}
+.bar .r{color:var(--out)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;z-index:50}
+.modal.show{display:flex}
+.sheet{background:var(--card);width:100%;max-width:620px;margin:0 auto;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.disp{background:var(--soft);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:right}
+.disp small{display:block;min-height:16px;font-size:13px;color:var(--mute);word-break:break-all}
+.disp b{display:block;font-size:30px;word-break:break-all}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.keys button{padding:16px 0;border:none;border-radius:12px;background:var(--soft);color:var(--text);font-size:20px;font-weight:600;cursor:pointer}
+.keys button.op{background:var(--line)}
+.keys button:active{opacity:.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hisobchi</h1>
+  <div class="tabs" id="tabs"></div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="full seg" id="typeSeg">
+        <button class="in on" data-t="Kirim">Kirim +</button>
+        <button class="out" data-t="Xarajat">Xarajat −</button>
+      </div>
+      <div><label>Sana</label><input type="date" id="date"></div>
+      <div><label>Xodim</label><select id="name"></select></div>
+      <div><label>Valyuta</label>
+        <select id="currency">
+          <option value="UZS">UZS — so'm</option>
+          <option value="KGS">KGS — som</option>
+          <option value="USD">USD — dollar</option>
+        </select></div>
+      <div><label>Summa</label>
+        <div class="row"><input type="text" id="amount" placeholder="0" inputmode="decimal"><button class="ico" id="openCalc" title="Kalkulyator">🧮</button></div></div>
+      <div class="full"><label>Izoh</label><input type="text" id="desc" placeholder="Nima uchun?" maxlength="200"></div>
+      <div class="full"><button class="btn" id="addBtn">Qo'shish</button></div>
+    </div>
+  </div>
+
+  <h2>Umumiy hisob</h2>
+  <div id="summary"></div>
+
+  <h2>Kim qancha olgan</h2>
+  <div class="card" id="people"></div>
+
+  <h2 id="listTitle">Amaliyotlar</h2>
+  <div id="list"></div>
+</div>
+
+<div class="bar">
+  <button id="exp">📥 Excel</button>
+  <button id="bak">💾 Zaxira</button>
+  <button id="imp">📂 Tiklash</button>
+  <button class="r" id="clr">🗑 Tozalash</button>
+</div>
+<input type="file" id="file" accept=".json" hidden>
+
+<div class="modal" id="calc">
+  <div class="sheet">
+    <div class="disp"><small id="cExpr"></small><b id="cRes">0</b></div>
+    <div class="keys" id="keys"></div>
+    <button class="btn" id="cUse">Summaga o'tkazish</button>
+  </div>
+</div>
+
+<script>
+const CUR={UZS:{s:"so'm",d:0},KGS:{s:"som",d:2},USD:{s:"$",d:2}};
+const KEY='hisobchi_v2',OLD='hisobchi_data',NKEY='hisobchi_names';
+let tx=[],names=['Mirjalol','Javohir','Axrorjon','Azamatjon'],filter='all',type='Kirim',editId=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmt=(n,c)=>{const v=Math.round(n*100)/100;return v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:CUR[c].d}).replace(/,/g,' ')+(c==='USD'?' $':' '+CUR[c].s)};
+
+function load(){
+  try{
+    const n=JSON.parse(localStorage.getItem(NKEY));if(Array.isArray(n)&&n.length)names=n;
+    let d=JSON.parse(localStorage.getItem(KEY));
+    if(!d){d=JSON.parse(localStorage.getItem(OLD))||[]}
+    tx=Array.isArray(d)?d:[];
+  }catch(e){tx=[]}
+  tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(tx));localStorage.setItem(NKEY,JSON.stringify(names))}
+  catch(e){alert("Saqlab bo'lmadi! Xotira to'lgan yoki brauzer ruxsat bermayapti.")}
+  render();
+}
+const filtered=()=>filter==='all'?tx:tx.filter(t=>t.name===filter);
+
+function renderTabs(){
+  $('tabs').innerHTML=['all',...names].map(n=>`<div class="tab ${n===filter?'on':''}" data-n="${esc(n)}">${n==='all'?'Hammasi':esc(n)}</div>`).join('')+`<div class="tab" data-add="1">+ Xodim</div>`;
+  $('name').innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+}
+function totals(list){
+  const r={};Object.keys(CUR).forEach(c=>r[c]={i:0,o:0});
+  list.forEach(t=>{if(!r[t.currency])return;t.type==='Kirim'?r[t.currency].i+=t.amount:r[t.currency].o+=t.amount});
+  return r;
+}
+function renderSummary(){
+  const r=totals(filtered());
+  $('summary').innerHTML=Object.keys(CUR).map(c=>{
+    const b=r[c].i-r[c].o;
+    return `<div class="card cur"><div class="cur-h">${c}</div><div class="cur-g">
+      <div><small>Kirim</small><b class="pos">${fmt(r[c].i,c)}</b></div>
+      <div><small>Xarajat</small><b class="neg">${fmt(r[c].o,c)}</b></div>
+      <div><small>Qoldiq</small><b class="${b<0?'neg':''}">${fmt(b,c)}</b></div></div></div>`}).join('');
+}
+function renderPeople(){
+  const html=names.map(n=>{
+    const r=totals(tx.filter(t=>t.name===n));
+    const lines=Object.keys(CUR).filter(c=>r[c].i||r[c].o).map(c=>
+      `<div class="person-l"><span>${c}: olgan</span><b class="pos">${fmt(r[c].i,c)}</b></div>`+
+      `<div class="person-l"><span>${c}: sarflagan</span><b class="neg">${fmt(r[c].o,c)}</b></div>`+
+      `<div class="person-l"><span>${c}: qoldiq</span><b>${fmt(r[c].i-r[c].o,c)}</b></div>`).join('');
+    return `<div class="person"><div class="person-n">${esc(n)}</div>${lines||'<div class="person-l"><span>Yozuv yo\'q</span></div>'}</div>`}).join('');
+  $('people').innerHTML=html;
+}
+function renderList(){
+  $('listTitle').textContent=filter==='all'?"So'nggi amaliyotlar":filter+" amaliyotlari";
+  const l=[...filtered()].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  if(!l.length){$('list').innerHTML='<div class="empty">Hozircha yozuv yo\'q</div>';return}
+  $('list').innerHTML=l.map(t=>{const k=t.type==='Kirim'?'in':'out';return `
+    <div class="tr ${k}"><div class="tr-h"><b>${esc(t.name)}</b><span>${esc(t.date)}</span></div>
+    <div class="tr-a ${k==='in'?'pos':'neg'}">${k==='in'?'+':'−'} ${fmt(t.amount,t.currency)}</div>
+    <div class="tr-d">${esc(t.desc)}</div>
+    <div class="tr-f"><button class="sm" data-e="${t.id}">Tahrir</button><button class="sm d" data-d="${t.id}">O'chirish</button></div></div>`}).join('');
+}
+function render(){renderTabs();renderSummary();renderPeople();renderList()}
+
+function setType(t){type=t;document.querySelectorAll('#typeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
+function resetForm(){editId=null;$('amount').value='';$('desc').value='';$('addBtn').textContent="Qo'shish"}
+
+function addTx(){
+  const amount=parseFloat($('amount').value.replace(/\s/g,'').replace(',','.'));
+  const date=$('date').value;
+  if(!date||!isFinite(amount)||amount<=0){alert("Sana va summani to'g'ri kiriting!");return}
+  const rec={date,name:$('name').value,type,currency:$('currency').value,amount:Math.round(amount*100)/100,desc:$('desc').value.trim()||'Izohsiz'};
+  if(editId){const i=tx.findIndex(t=>t.id===editId);if(i>-1)tx[i]={...tx[i],...rec}}
+  else tx.push({id:Date.now(),...rec});
+  resetForm();save();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('addBtn').onclick=addTx;
+document.querySelectorAll('#typeSeg button').forEach(b=>b.onclick=()=>setType(b.dataset.t));
+$('tabs').onclick=e=>{
+  const t=e.target.closest('.tab');if(!t)return;
+  if(t.dataset.add){const n=(prompt("Yangi xodim ismi:")||'').trim();if(n&&!names.includes(n)){names.push(n);save()}return}
+  filter=t.dataset.n;render();
+};
+$('list').onclick=e=>{
+  const d=e.target.dataset.d,ed=e.target.dataset.e;
+  if(d&&confirm("O'chirmoqchimisiz?")){tx=tx.filter(t=>t.id!==+d);save()}
+  if(ed){const t=tx.find(x=>x.id===+ed);if(!t)return;editId=t.id;setType(t.type);
+    $('date').value=t.date;$('name').value=t.name;$('currency').value=t.currency;$('amount').value=t.amount;$('desc').value=t.desc==='Izohsiz'?'':t.desc;
+    $('addBtn').textContent="Saqlash";window.scrollTo({top:0,behavior:'smooth'})}
+};
+
+/* Kalkulyator */
+let expr='';
+const KEYS=['C','(',')','÷','7','8','9','×','4','5','6','−','1','2','3','+','⌫','0','.','='];
+$('keys').innerHTML=KEYS.map(k=>`<button class="${'÷×−+='.includes(k)?'op':''}" data-k="${k}">${k}</button>`).join('');
+function calc(s){
+  const j=s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+  if(!/^[0-9+\-*/.() ]+$/.test(j))return null;
+  try{const v=Function('"use strict";return ('+j+')')();return isFinite(v)?Math.round(v*100)/100:null}catch(e){return null}
+}
+function showCalc(){$('cExpr').textContent=expr;const v=calc(expr);$('cRes').textContent=v===null?(expr?'…':'0'):v.toLocaleString('en-US',{maximumFractionDigits:2}).replace(/,/g,' ')}
+$('keys').onclick=e=>{
+  const k=e.target.dataset.k;if(!k)return;
+  if(k==='C')expr='';
+  else if(k==='⌫')expr=expr.slice(0,-1);
+  else if(k==='='){const v=calc(expr);if(v!==null)expr=String(v)}
+  else expr+=k;
+  showCalc();
+};
+$('openCalc').onclick=()=>{expr=$('amount').value||'';showCalc();$('calc').classList.add('show')};
+$('cUse').onclick=()=>{const v=calc(expr);if(v!==null&&v>0)$('amount').value=v;$('calc').classList.remove('show')};
+$('calc').onclick=e=>{if(e.target===$('calc'))$('calc').classList.remove('show')};
+
+/* Eksport / zaxira */
+function download(name,content,mime){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+const cell=v=>{let s=String(v);if(/^[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
+$('exp').onclick=()=>{
+  const l=filtered();if(!l.length){alert("Ma'lumot yo'q!");return}
+  let csv="Sana,Xodim,Turi,Valyuta,Summa,Izoh\n";
+  [...l].sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{csv+=[t.date,t.name,t.type,t.currency,t.amount,t.desc].map(cell).join(',')+"\n"});
+  download('Hisobchi_'+(filter==='all'?'hammasi':filter)+'_'+today()+'.csv','\uFEFF'+csv,'text/csv;charset=utf-8');
+};
+$('bak').onclick=()=>{if(!tx.length){alert("Ma'lumot yo'q!");return}download('hisobchi_zaxira_'+today()+'.json',JSON.stringify({names,tx}),'application/json')};
+$('imp').onclick=()=>$('file').click();
+$('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);if(!Array.isArray(d.tx))throw 0;
+    if(!confirm("Hozirgi ma'lumotlar zaxiradagi bilan almashtiriladi. Davom etasizmi?"))return;
+    tx=d.tx.filter(t=>t&&t.date&&CUR[t.currency]&&t.amount>0);if(Array.isArray(d.names))names=d.names;
+    tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});save();
+  }catch(_){alert("Fayl noto'g'ri!")}};
+  r.readAsText(f);e.target.value='';
+};
+$('clr').onclick=()=>{
+  if(!tx.length)return;
+  if(confirm("⚠️ Barcha ma'lumotlar o'chadi!\nAvval 'Zaxira' tugmasi bilan saqlab oldingizmi?\n\nDavom etasizmi?")){tx=[];save()}
+};
+
+$('date').value=today();
+load();render();
+</script>
+</body>
+</html>
