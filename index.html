@@ -45,11 +45,6 @@ input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
 .cur-g small{display:block;font-size:11px;color:var(--mute);margin-bottom:3px}
 .cur-g b{font-size:14px;word-break:break-word}
 .pos{color:var(--in)}.neg{color:var(--out)}
-.person{padding:12px 0;border-top:1px solid var(--line)}
-.person:first-of-type{border-top:none;padding-top:0}
-.person-n{font-weight:700;margin-bottom:6px}
-.person-l{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
-.person-l span:first-child{color:var(--mute)}
 .tr{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
 .tr.in{border-left-color:var(--in)}.tr.out{border-left-color:var(--out)}
 .tr-h{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:4px}
@@ -91,6 +86,9 @@ input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
   <h1>Hisobchi</h1>
   <div class="tabs" id="tabs"></div>
 
+  <h2 id="sumTitle">Umumiy hisob</h2>
+  <div id="summary"></div>
+
   <div class="card">
     <div class="grid">
       <div class="full seg" id="typeSeg">
@@ -111,12 +109,6 @@ input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
       <div class="full"><button class="btn" id="addBtn">Qo'shish</button></div>
     </div>
   </div>
-
-  <h2>Umumiy hisob</h2>
-  <div id="summary"></div>
-
-  <h2>Kim qancha olgan</h2>
-  <div class="card" id="people"></div>
 
   <h2 id="listTitle">Amaliyotlar</h2>
   <div id="list"></div>
@@ -173,23 +165,14 @@ function totals(list){
   return r;
 }
 function renderSummary(){
+  $('sumTitle').textContent=filter==='all'?'Umumiy hisob':filter+': hisob';
   const r=totals(filtered());
   $('summary').innerHTML=Object.keys(CUR).map(c=>{
     const b=r[c].i-r[c].o;
     return `<div class="card cur"><div class="cur-h">${c}</div><div class="cur-g">
-      <div><small>Kirim</small><b class="pos">${fmt(r[c].i,c)}</b></div>
+      <div><small>Kirim (olgan)</small><b class="pos">${fmt(r[c].i,c)}</b></div>
       <div><small>Xarajat</small><b class="neg">${fmt(r[c].o,c)}</b></div>
       <div><small>Qoldiq</small><b class="${b<0?'neg':''}">${fmt(b,c)}</b></div></div></div>`}).join('');
-}
-function renderPeople(){
-  const html=names.map(n=>{
-    const r=totals(tx.filter(t=>t.name===n));
-    const lines=Object.keys(CUR).filter(c=>r[c].i||r[c].o).map(c=>
-      `<div class="person-l"><span>${c}: olgan</span><b class="pos">${fmt(r[c].i,c)}</b></div>`+
-      `<div class="person-l"><span>${c}: sarflagan</span><b class="neg">${fmt(r[c].o,c)}</b></div>`+
-      `<div class="person-l"><span>${c}: qoldiq</span><b>${fmt(r[c].i-r[c].o,c)}</b></div>`).join('');
-    return `<div class="person"><div class="person-n">${esc(n)}</div>${lines||'<div class="person-l"><span>Yozuv yo\'q</span></div>'}</div>`}).join('');
-  $('people').innerHTML=html;
 }
 function renderList(){
   $('listTitle').textContent=filter==='all'?"So'nggi amaliyotlar":filter+" amaliyotlari";
@@ -201,7 +184,7 @@ function renderList(){
     <div class="tr-d">${esc(t.desc)}</div>
     <div class="tr-f"><button class="sm" data-e="${t.id}">Tahrir</button><button class="sm d" data-d="${t.id}">O'chirish</button></div></div>`}).join('');
 }
-function render(){renderTabs();renderSummary();renderPeople();renderList()}
+function render(){renderTabs();renderSummary();renderList()}
 
 function setType(t){type=t;document.querySelectorAll('#typeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
 function resetForm(){editId=null;$('amount').value='';$('desc').value='';$('addBtn').textContent="Qo'shish"}
