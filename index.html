@@ -287,7 +287,7 @@ async function flush(){
     const q=getQ();
     while(q.length){
       const j=await rpc(q[0].fn,q[0].args);
-      if(j&&j.ok===false){busy=false;if(j.error==='bad_pin')dropPin("PIN noto'g'ri yoki o'zgargan");else if(j.error==='locked')gate("Ko'p xato urinish. 15 daqiqadan keyin urining");return}
+      if(j&&j.ok===false){busy=false;if(j.error==='bad_pin')dropPin("PIN noto'g'ri yoki o'zgargan");else if(j.error==='locked')gate("Ko'p xato urinish. 1 daqiqadan keyin urining");return}
       q.shift();setQ(q);
     }
     online=true;
@@ -300,7 +300,7 @@ async function pull(){
   try{
     const j=await rpc('hisob_pull',{});
     if(!j||j.ok===false){
-      if(j&&j.error==='locked'){online=false;gate("Ko'p xato urinish. 15 daqiqadan keyin qayta urining");status()}
+      if(j&&j.error==='locked'){online=false;gate("Ko'p xato urinish. 1 daqiqadan keyin qayta urining");status()}
       else dropPin("PIN noto'g'ri");
       return;
     }
