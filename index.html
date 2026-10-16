@@ -120,7 +120,7 @@ input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
   </div>
 </div>
 
-<div class="modal" id="gate" style="align-items:center;z-index:500"><div class="sheet" style="border-radius:20px;max-width:360px;display:grid;gap:12px">
+<div class="modal" id="gate" style="align-items:center;z-index:500;background:var(--bg)"><div class="sheet" style="border-radius:20px;max-width:360px;display:grid;gap:12px">
   <h2 style="margin:0">Umumiy hisob</h2>
   <div id="gateMsg" style="color:var(--mute);font-size:14px">Kirish uchun PIN-kodni kiriting</div>
   <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="PIN-kod">
@@ -268,8 +268,9 @@ $('clr').onclick=()=>{
 /* Umumiy baza (Supabase): ma'lumot hamma uchun bitta joyda, PIN bilan himoyalangan */
 const SB_URL='https://spikpvjdtlwauynlmles.supabase.co',SB_KEY='sb_publishable_d_ztBvM1Hs7Y3kcaJmc5Tg_6CFNdf29';
 const PKEY='hisobchi_pin',QKEY='hisobchi_queue',MKEY='hisobchi_merged_v1';
-let pin=null,online=false,busy=false;
-try{pin=localStorage.getItem(PKEY)}catch(e){}
+let pin=null,pinHash=null,online=false,busy=false;
+const HKEY='hisobchi_pinhash';
+const hashPin=async p=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('hisobchi|'+p));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){return null}};
 const getQ=()=>{try{return JSON.parse(localStorage.getItem(QKEY))||[]}catch(e){return[]}};
 const setQ=q=>{try{localStorage.setItem(QKEY,JSON.stringify(q))}catch(e){}};
 async function rpc(fn,args){
@@ -278,8 +279,9 @@ async function rpc(fn,args){
   return r.json();
 }
 function status(){const n=getQ().length;$('syncSt').textContent=!pin?'':(n?"⏳ "+n+" ta o'zgarish yuborilmagan":(online?'● umumiy baza':'○ offlayn'))}
-function gate(msg){$('gateMsg').textContent=msg||'Kirish uchun PIN-kodni kiriting';$('gate').classList.add('show')}
-function dropPin(msg){pin=null;try{localStorage.removeItem(PKEY)}catch(e){}online=false;gate(msg);status()}
+function gate(msg){$('gateMsg').textContent=msg||'Kirish uchun PIN-kodni kiriting';$('gate').classList.add('show');setTimeout(()=>{try{$('pinIn').focus()}catch(e){}},60)}
+function unlock(){$('gate').classList.remove('show');render();status()}
+function dropPin(msg){pin=null;pinHash=null;try{localStorage.removeItem(PKEY);localStorage.removeItem(HKEY)}catch(e){}online=false;gate(msg);status()}
 function queue(fn,args){const q=getQ();q.push({fn,args});setQ(q);status();flush()}
 async function flush(){
   if(!pin||busy)return;busy=true;
@@ -295,7 +297,7 @@ async function flush(){
   busy=false;status();
 }
 async function pull(){
-  if(!pin){gate();return}
+  if(!pin){if(!$('gate').classList.contains('show'))gate();return}
   await flush();if(getQ().length){status();return}
   try{
     const j=await rpc('hisob_pull',{});
@@ -306,6 +308,7 @@ async function pull(){
     }
     if(getQ().length){status();return}
     online=true;
+    if(pinHash){try{localStorage.setItem(HKEY,pinHash)}catch(e){}}
     const srv=Array.isArray(j.tx)?j.tx:[];
     let merged=false;try{merged=localStorage.getItem(MKEY)==='1'}catch(e){}
     if(!merged){
@@ -322,18 +325,25 @@ async function pull(){
     if(Array.isArray(j.names)&&j.names.length)names=j.names;
     tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});
     try{localStorage.setItem(KEY,JSON.stringify(tx));localStorage.setItem(NKEY,JSON.stringify(names))}catch(e){}
-    $('gate').classList.remove('show');render();
+    unlock();
   }catch(e){online=false}
   status();
 }
-$('pinGo').onclick=()=>{const v=$('pinIn').value.trim();if(!v)return;pin=v;try{localStorage.setItem(PKEY,v)}catch(e){}$('pinIn').value='';$('gateMsg').textContent='Tekshirilmoqda…';pull()};
+$('pinGo').onclick=async()=>{
+  const v=$('pinIn').value.trim();if(!v)return;
+  $('pinIn').value='';
+  pinHash=await hashPin(v);let lh=null;try{lh=localStorage.getItem(HKEY)}catch(e){}
+  pin=v;
+  if(pinHash&&lh&&pinHash===lh){unlock();pull();return}
+  $('gateMsg').textContent='Tekshirilmoqda…';pull();
+};
 $('pinIn').onkeydown=e=>{if(e.key==='Enter')$('pinGo').click()};
 $('syncSt').onclick=()=>{if(!online||!pin)gate()};
 setInterval(()=>{if(!document.hidden)pull()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 
 $('date').value=today();
-load();render();status();pull();
+load();status();gate();
 
 </script>
 </body>
