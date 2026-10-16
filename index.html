@@ -130,6 +130,14 @@ input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
   </div>
 </div>
 
+<div class="modal" id="gate" style="align-items:center;z-index:500"><div class="sheet" style="border-radius:20px;max-width:360px;display:grid;gap:12px">
+  <h2 style="margin:0">Umumiy hisob</h2>
+  <div id="gateMsg" style="color:var(--mute);font-size:14px">Kirish uchun PIN-kodni kiriting</div>
+  <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="PIN-kod">
+  <button class="btn" id="pinGo">Kirish</button>
+</div></div>
+<div id="syncSt" style="position:fixed;right:10px;top:calc(6px + env(safe-area-inset-top));font-size:11px;color:var(--mute);z-index:5;cursor:pointer"></div>
+
 <script>
 const CUR={UZS:{s:"so'm",d:0},KGS:{s:"som",d:2},USD:{s:"$",d:2}};
 const KEY='hisobchi_v2',OLD='hisobchi_data',NKEY='hisobchi_names';
@@ -148,16 +156,17 @@ function load(){
   }catch(e){tx=[]}
   tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});
 }
-function save(){
+function save(op,a){
   try{localStorage.setItem(KEY,JSON.stringify(tx));localStorage.setItem(NKEY,JSON.stringify(names))}
   catch(e){alert("Saqlab bo'lmadi! Xotira to'lgan yoki brauzer ruxsat bermayapti.")}
   render();
+  if(op)queue(op,a);
 }
 const filtered=()=>filter==='all'?tx:tx.filter(t=>t.name===filter);
 
 function renderTabs(){
   $('tabs').innerHTML=['all',...names].map(n=>`<div class="tab ${n===filter?'on':''}" data-n="${esc(n)}">${n==='all'?'Hammasi':esc(n)}</div>`).join('')+`<div class="tab" data-add="1">+ Xodim</div>`;
-  $('name').innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  const sel=$('name').value;$('name').innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');if(names.includes(sel))$('name').value=sel;
 }
 function totals(list){
   const r={};Object.keys(CUR).forEach(c=>r[c]={i:0,o:0});
@@ -194,21 +203,22 @@ function addTx(){
   const date=$('date').value;
   if(!date||!isFinite(amount)||amount<=0){alert("Sana va summani to'g'ri kiriting!");return}
   const rec={date,name:$('name').value,type,currency:$('currency').value,amount:Math.round(amount*100)/100,desc:$('desc').value.trim()||'Izohsiz'};
-  if(editId){const i=tx.findIndex(t=>t.id===editId);if(i>-1)tx[i]={...tx[i],...rec}}
-  else tx.push({id:Date.now(),...rec});
-  resetForm();save();window.scrollTo({top:0,behavior:'smooth'});
+  let row;
+  if(editId){const i=tx.findIndex(t=>t.id===editId);if(i>-1){tx[i]={...tx[i],...rec};row=tx[i]}}
+  else{row={id:Date.now(),...rec};tx.push(row)}
+  resetForm();save(row?'hisob_upsert':null,{p_row:row});window.scrollTo({top:0,behavior:'smooth'});
 }
 
 $('addBtn').onclick=addTx;
 document.querySelectorAll('#typeSeg button').forEach(b=>b.onclick=()=>setType(b.dataset.t));
 $('tabs').onclick=e=>{
   const t=e.target.closest('.tab');if(!t)return;
-  if(t.dataset.add){const n=(prompt("Yangi xodim ismi:")||'').trim();if(n&&!names.includes(n)){names.push(n);save()}return}
+  if(t.dataset.add){const n=(prompt("Yangi xodim ismi:")||'').trim();if(n&&!names.includes(n)){names.push(n);save('hisob_set_names',{p_names:names})}return}
   filter=t.dataset.n;render();
 };
 $('list').onclick=e=>{
   const d=e.target.dataset.d,ed=e.target.dataset.e;
-  if(d&&confirm("O'chirmoqchimisiz?")){tx=tx.filter(t=>t.id!==+d);save()}
+  if(d&&confirm("O'chirmoqchimisiz?")){tx=tx.filter(t=>t.id!==+d);save('hisob_delete',{p_id:+d})}
   if(ed){const t=tx.find(x=>x.id===+ed);if(!t)return;editId=t.id;setType(t.type);
     $('date').value=t.date;$('name').value=t.name;$('currency').value=t.currency;$('amount').value=t.amount;$('desc').value=t.desc==='Izohsiz'?'':t.desc;
     $('addBtn').textContent="Saqlash";window.scrollTo({top:0,behavior:'smooth'})}
@@ -256,17 +266,84 @@ $('file').onchange=e=>{
     const d=JSON.parse(r.result);if(!Array.isArray(d.tx))throw 0;
     if(!confirm("Hozirgi ma'lumotlar zaxiradagi bilan almashtiriladi. Davom etasizmi?"))return;
     tx=d.tx.filter(t=>t&&t.date&&CUR[t.currency]&&t.amount>0);if(Array.isArray(d.names))names=d.names;
-    tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});save();
+    tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});save('hisob_replace_all',{p_tx:tx,p_names:names});
   }catch(_){alert("Fayl noto'g'ri!")}};
   r.readAsText(f);e.target.value='';
 };
 $('clr').onclick=()=>{
   if(!tx.length)return;
-  if(confirm("⚠️ Barcha ma'lumotlar o'chadi!\nAvval 'Zaxira' tugmasi bilan saqlab oldingizmi?\n\nDavom etasizmi?")){tx=[];save()}
+  if(confirm("⚠️ Barcha ma'lumotlar o'chadi!\nAvval 'Zaxira' tugmasi bilan saqlab oldingizmi?\n\nDavom etasizmi?")){tx=[];save('hisob_replace_all',{p_tx:[],p_names:names})}
 };
 
+/* Umumiy baza (Supabase): ma'lumot hamma uchun bitta joyda, PIN bilan himoyalangan */
+const SB_URL='https://spikpvjdtlwauynlmles.supabase.co',SB_KEY='sb_publishable_d_ztBvM1Hs7Y3kcaJmc5Tg_6CFNdf29';
+const PKEY='hisobchi_pin',QKEY='hisobchi_queue',MKEY='hisobchi_merged_v1';
+let pin=null,online=false,busy=false;
+try{pin=localStorage.getItem(PKEY)}catch(e){}
+const getQ=()=>{try{return JSON.parse(localStorage.getItem(QKEY))||[]}catch(e){return[]}};
+const setQ=q=>{try{localStorage.setItem(QKEY,JSON.stringify(q))}catch(e){}};
+async function rpc(fn,args){
+  const r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_pin:pin,...args})});
+  if(!r.ok)throw new Error('http '+r.status);
+  return r.json();
+}
+function status(){const n=getQ().length;$('syncSt').textContent=!pin?'':(n?"⏳ "+n+" ta o'zgarish yuborilmagan":(online?'● umumiy baza':'○ offlayn'))}
+function gate(msg){$('gateMsg').textContent=msg||'Kirish uchun PIN-kodni kiriting';$('gate').classList.add('show')}
+function dropPin(msg){pin=null;try{localStorage.removeItem(PKEY)}catch(e){}online=false;gate(msg);status()}
+function queue(fn,args){const q=getQ();q.push({fn,args});setQ(q);status();flush()}
+async function flush(){
+  if(!pin||busy)return;busy=true;
+  try{
+    const q=getQ();
+    while(q.length){
+      const j=await rpc(q[0].fn,q[0].args);
+      if(j&&j.ok===false){busy=false;if(j.error==='bad_pin')dropPin("PIN noto'g'ri yoki o'zgargan");else if(j.error==='locked')gate("Ko'p xato urinish. 15 daqiqadan keyin urining");return}
+      q.shift();setQ(q);
+    }
+    online=true;
+  }catch(e){online=false}
+  busy=false;status();
+}
+async function pull(){
+  if(!pin){gate();return}
+  await flush();if(getQ().length){status();return}
+  try{
+    const j=await rpc('hisob_pull',{});
+    if(!j||j.ok===false){
+      if(j&&j.error==='locked'){online=false;gate("Ko'p xato urinish. 15 daqiqadan keyin qayta urining");status()}
+      else dropPin("PIN noto'g'ri");
+      return;
+    }
+    if(getQ().length){status();return}
+    online=true;
+    const srv=Array.isArray(j.tx)?j.tx:[];
+    let merged=false;try{merged=localStorage.getItem(MKEY)==='1'}catch(e){}
+    if(!merged){
+      const have=new Set(srv.map(t=>t.id)),miss=tx.filter(t=>!have.has(t.id));
+      if(miss.length&&confirm("Bu telefonda "+miss.length+" ta yozuv bor, umumiy bazada yo'q. Umumiy bazaga qo'shilsinmi?")){
+        const nn=[...new Set([...(Array.isArray(j.names)?j.names:[]),...names])];
+        const a=await rpc('hisob_merge',{p_tx:miss}),b=await rpc('hisob_set_names',{p_names:nn});
+        if(!(a&&a.ok)||!(b&&b.ok)){status();return}
+        return pull();
+      }
+      try{localStorage.setItem('hisobchi_local_backup',JSON.stringify({names,tx}));localStorage.setItem(MKEY,'1')}catch(e){}
+    }
+    tx=srv;
+    if(Array.isArray(j.names)&&j.names.length)names=j.names;
+    tx.forEach(t=>{if(!names.includes(t.name))names.push(t.name)});
+    try{localStorage.setItem(KEY,JSON.stringify(tx));localStorage.setItem(NKEY,JSON.stringify(names))}catch(e){}
+    $('gate').classList.remove('show');render();
+  }catch(e){online=false}
+  status();
+}
+$('pinGo').onclick=()=>{const v=$('pinIn').value.trim();if(!v)return;pin=v;try{localStorage.setItem(PKEY,v)}catch(e){}$('pinIn').value='';$('gateMsg').textContent='Tekshirilmoqda…';pull()};
+$('pinIn').onkeydown=e=>{if(e.key==='Enter')$('pinGo').click()};
+$('syncSt').onclick=()=>{if(!online||!pin)gate()};
+setInterval(()=>{if(!document.hidden)pull()},15000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+
 $('date').value=today();
-load();render();
+load();render();status();pull();
 
 /* Kirish animatsiyasi */
 (function(){
